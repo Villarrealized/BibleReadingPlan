@@ -22,9 +22,11 @@ struct BookItem: Codable, Hashable {
     var chapters: Int
 }
 
-struct Chapter: Identifiable {
-    var id: String { name }
-    var name: String
+struct ReadingBucket: Identifiable {
+    var id: Int
+    var chapterName: String
+    var currentChapter: Int
+    var totalChapters: Int
 }
 
 class ReadingPlan: ObservableObject {
@@ -38,7 +40,7 @@ class ReadingPlan: ObservableObject {
     
     var bookList: [BookList]
     @Published var day: Int
-    @Published var today : [Chapter]
+    @Published var today : [ReadingBucket]
     
     func setDay(newValue: Int) {
         let value = newValue <= 0 ? 1 : newValue
@@ -48,8 +50,8 @@ class ReadingPlan: ObservableObject {
     }
     
     func setToday() {
-        var chapterList:[Chapter] = []
-        self.bookList.forEach { list in
+        var readingBuckets:[ReadingBucket] = []
+        for (listIndex, list) in self.bookList.enumerated() {
             let num = self.day
             var virtualChapter = num % list.chapterCount
             if virtualChapter == 0 {
@@ -69,8 +71,15 @@ class ReadingPlan: ObservableObject {
                     break
                 }
             }
-            chapterList.append(Chapter(name: "\(bookName) \(chapter)"))
+            readingBuckets.append(
+                ReadingBucket(
+                    id: listIndex,
+                    chapterName: "\(bookName) \(chapter)",
+                    currentChapter: virtualChapter,
+                    totalChapters: list.chapterCount
+                )
+            )
         }
-        self.today = chapterList
+        self.today = readingBuckets
     }
 }

@@ -14,12 +14,15 @@ struct ContentView: View {
     @FocusState private var isTextFieldFocused: Bool
     
     
-    
     var body: some View {
         NavigationStack {
             List {
-                ForEach(readingPlan.today) { chapter in
-                    Text(chapter.name)
+                ForEach(readingPlan.today) { bucket in
+                    HStack {
+                        Text(bucket.chapterName)
+                        Spacer()
+                        Text("\(bucket.currentChapter)/\(bucket.totalChapters)").font(.caption)
+                    }
                 }
             }
             .navigationTitle("Day \(readingPlan.day)")
@@ -30,7 +33,7 @@ struct ContentView: View {
                     }
                 }
                 ToolbarItem(placement: .secondaryAction) {
-                    Button("Goto") {
+                    Button("Go to day") {
                         showInputDialog = true
                     }
                 }

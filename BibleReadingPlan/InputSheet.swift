@@ -15,7 +15,7 @@ struct InputSheet: View {
 
     var body: some View {
         VStack(spacing: 12) {
-            Text("Skip to any day")
+            Text("Go to day")
                 .font(.headline)
 
             TextField("Enter day", text: $inputText)
