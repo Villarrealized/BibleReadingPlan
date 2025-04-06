@@ -21,7 +21,7 @@ struct ContentView: View {
                     HStack {
                         Text(bucket.chapterName)
                         Spacer()
-                        Text("\(bucket.currentChapter)/\(bucket.totalChapters)").font(.caption)
+                        Text("\(bucket.currentChapter)/\(bucket.totalChapters)").font(.caption).foregroundStyle(.secondary)
                     }
                 }
             }

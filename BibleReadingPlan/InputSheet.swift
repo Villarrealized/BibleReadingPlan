@@ -12,37 +12,48 @@ struct InputSheet: View {
     @Binding var isPresented: Bool
     @FocusState private var isTextFieldFocused: Bool
     @ObservedObject var readingPlan: ReadingPlan // Ensure it's passed into the sheet
-
+    
     var body: some View {
-        VStack(spacing: 12) {
-            Text("Go to day")
-                .font(.headline)
+        let fieldWidth: CGFloat = 200 // Shared width for TextField and Button
 
-            TextField("Enter day", text: $inputText)
+        VStack(spacing: 8) {
+            Text("Go to day").font(.headline)
+            TextField(String(readingPlan.day), text: $inputText)
                 .keyboardType(.numberPad)
                 .focused($isTextFieldFocused)
-                .frame(height: 36)
+                .frame(width: fieldWidth, height: 36)
                 .padding(.horizontal, 12)
-                .background(Color(.systemGray6))
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Color(UIColor.secondarySystemBackground))
+                )
+                .foregroundColor(Color.primary)
                 .cornerRadius(8)
                 .padding(.top, 8)
 
-            Button("Go") {
-                // Check if input is a valid integer, if not use current day
+            Button(action: {
                 let newDay = Int(inputText) ?? readingPlan.day
                 readingPlan.setDay(newValue: newDay)
-                isPresented = false // Dismiss the sheet after action
+                isPresented = false
+            }) {
+                Text("Go")
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 40)
+                    .foregroundColor(.white)
+                    .background(Color.blue)
+                    .cornerRadius(8)
             }
+            .frame(width: fieldWidth)
             .padding(.top, 6)
-            .bold()
         }
         .padding()
         .presentationDetents([.fraction(0.22)])
-        .presentationDragIndicator(.hidden)
+        .presentationDragIndicator(.visible)
         .onAppear {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
                 isTextFieldFocused = true
             }
         }
     }
+
 }
