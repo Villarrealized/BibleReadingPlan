@@ -12,8 +12,26 @@ let userDefaults = UserDefaults.standard
 struct BookList: Codable, Identifiable {
     var id: Int
     var books: [BookItem]
+    var chaptersPerDay: Int?
+    
     var chapterCount: Int {
         self.books.reduce(0) { $0 + $1.chapters }
+    }
+    
+    enum CodingKeys: String, CodingKey {
+        case id
+        case books
+        case chaptersPerDay = "chapters_per_day"
+    }
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.id = try container.decode(Int.self, forKey: .id)
+        self.books = try container.decode([BookItem].self, forKey: .books)
+        self.chaptersPerDay = try container.decodeIfPresent(Int.self, forKey: .chaptersPerDay)
+        
+        if chaptersPerDay != nil {
+            assert(self.books.count == 1, "Cannot use chapters_per_day if there is more than one book in the list. Found more than one book with list id: \(id)")
+        }
     }
 }
 
@@ -25,8 +43,8 @@ struct BookItem: Codable, Hashable {
 struct ReadingBucket: Identifiable {
     var id: Int
     var chapterName: String
-    var currentChapter: Int
-    var totalChapters: Int
+    var day: Int
+    var totalDays: Int
 }
 
 class ReadingPlan: ObservableObject {
@@ -52,17 +70,29 @@ class ReadingPlan: ObservableObject {
     func setToday() {
         var readingBuckets:[ReadingBucket] = []
         for (listIndex, list) in self.bookList.enumerated() {
-            let num = self.day
-            var virtualChapter = num % list.chapterCount
-            if virtualChapter == 0 {
-                virtualChapter = list.chapterCount
+            let chaptersPerDay = list.chaptersPerDay ?? 1
+            var totalDays = list.chapterCount
+            
+            if chaptersPerDay > 1 {
+                totalDays = Int(ceil(Double(list.chapterCount) / Double(chaptersPerDay)))
             }
+            
+            var virtualChapter = self.day % totalDays
+            if virtualChapter == 0 {
+                virtualChapter = totalDays
+            }
+            
             var chapter = 0
             var bookName: String = ""
+            var totalChapters: Int = 0
+            
             for (index, book) in list.books.enumerated() {
                 chapter += book.chapters
+                totalChapters = book.chapters
+                
                 if virtualChapter <= chapter {
                     bookName = book.name
+                    // first book in the list
                     if index == 0 {
                         chapter = virtualChapter
                     } else {
@@ -71,12 +101,27 @@ class ReadingPlan: ObservableObject {
                     break
                 }
             }
+            
+            var chapterName = "\(bookName) \(chapter)"
+            var day = virtualChapter
+            
+            if chaptersPerDay > 1 {
+                let startChapter = ((chapter - 1) * chaptersPerDay) + 1
+                let endChapter = min((startChapter + chaptersPerDay - 1), totalChapters)
+                if startChapter == endChapter {
+                    chapterName = "\(bookName) \(startChapter)"
+                } else {
+                    chapterName = "\(bookName) \(startChapter)-\(endChapter)"
+                }
+                day = virtualChapter
+            }
+            
             readingBuckets.append(
                 ReadingBucket(
                     id: listIndex,
-                    chapterName: "\(bookName) \(chapter)",
-                    currentChapter: virtualChapter,
-                    totalChapters: list.chapterCount
+                    chapterName: chapterName,
+                    day: day,
+                    totalDays: totalDays
                 )
             )
         }

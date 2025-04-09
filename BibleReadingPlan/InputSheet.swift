@@ -54,6 +54,9 @@ struct InputSheet: View {
                 isTextFieldFocused = true
             }
         }
+        .onDisappear {
+            inputText = ""
+        }
     }
 
 }

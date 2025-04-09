@@ -3,10 +3,11 @@
         "id": 1,
         "books": [
             {
-                "name": "1 Peter",
-                "chapters": 5
+                "name": "Hebrews",
+                "chapters": 13
             }
-        ]
+        ],
+        "chapters_per_day": 3
     },
     {
         "id": 2,
@@ -114,12 +115,12 @@
                 "chapters": 1
             },
             {
-                "name": "Hebrews",
-                "chapters": 13
-            },
-            {
                 "name": "James",
                 "chapters": 5
+            },
+            {
+                "name": "1 Peter",
+                "chapters": 5,
             },
             {
                 "name": "2 Peter",
