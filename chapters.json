@@ -1,0 +1,38 @@
+[
+  {
+    "id": 0,
+    "start": 0.0,
+    "end": 9.713,
+    "name": "Opening Credits"
+  },
+  {
+    "id": 1,
+    "start": 9.713,
+    "end": 14.904,
+    "name": "The First Book of Moses: Genesis"
+  },
+  {
+    "id": 2,
+    "start": 14.904,
+    "end": 434.445,
+    "name": "Genesis 1"
+  },
+  {
+    "id": 3,
+    "start": 434.445,
+    "end": 725.762,
+    "name": "Genesis 2"
+  },
+  {
+    "id": 4,
+    "start": 725.762,
+    "end": 1056.785,
+    "name": "Genesis 3"
+  },
+  {
+    "id": 5,
+    "start": 1056.785,
+    "end": 1363.799,
+    "name": "Genesis 4"
+  }
+]

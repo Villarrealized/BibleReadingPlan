@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct ContentView: View {
-    @ObservedObject var audioManager = AudioPlayerManager.shared
+    @ObservedObject var audioManager = AudioPlayerEngine.shared
     @StateObject var readingPlan = ReadingPlan(jsonFile: "plan.json")
     @State var showInputDialog = false
     @State private var inputText = ""
@@ -18,13 +18,15 @@ struct ContentView: View {
     @State private var showFullPlayer = false
     
     init() {
-        let tracks = [
-            VirtualTrack(title: "Genesis 1", startTime: 15, endTime: 419),
-            VirtualTrack(title: "Genesis 2", startTime: 419, endTime: 727),
-        ]
-        
         if let url = Bundle.main.url(forResource: "bible", withExtension: "mp3") {
-            AudioPlayerManager.shared.loadLargeFile(url: url, tracks: tracks)
+            let tracks = loadChapters()
+            
+            do {
+                try AudioPlayerEngine.shared.loadLargeFile(url: url, tracks: tracks)
+            } catch {
+                print("Error loading audio file: \(error)")
+            }
+
         }
     }
     

@@ -1,0 +1,219 @@
+import Foundation
+import AVFoundation
+import Combine
+
+
+struct VirtualTrack: Identifiable {
+    let id = UUID()
+    let title: String
+    let startTime: TimeInterval
+    let endTime: TimeInterval
+}
+
+struct ChapterJSON: Codable {
+    let id: Int
+    let start: Double
+    let end: Double
+    let name: String
+}
+
+func loadChapters() -> [VirtualTrack] {
+    guard let url = Bundle.main.url(forResource: "chapters", withExtension: "json") else {
+        print("Error: chapters.json not found")
+        return []
+    }
+    
+    do {
+        let data = try Data(contentsOf: url)
+        let decoder = JSONDecoder()
+        let chaptersJSON = try decoder.decode([ChapterJSON].self, from: data)
+        
+        // Convert to VirtualTrack
+        let tracks = chaptersJSON.map { chapter in
+            VirtualTrack(title: chapter.name, startTime: chapter.start, endTime: chapter.end)
+        }
+        return tracks
+    } catch {
+        print("Error decoding chapters.json: \(error)")
+        return []
+    }
+}
+
+final class AudioPlayerEngine: ObservableObject {
+    static let shared = AudioPlayerEngine()
+    
+    @Published var isPlaying = false
+    @Published var currentTime: Double = 0
+    @Published var duration: Double = 0
+    @Published var currentVirtualTrackIndex: Int = 0
+    @Published var playbackRate: Float = 1.0
+    @Published var isUserScrubbing = false
+    
+    var virtualTracks: [VirtualTrack] = []
+    
+    private var audioEngine = AVAudioEngine()
+    private var playerNode = AVAudioPlayerNode()
+    private var timePitch = AVAudioUnitTimePitch()
+    
+    private var audioFile: AVAudioFile?
+    private var timer: Timer?
+    private var isScheduling = false
+    
+    private var trackToken = 0 // NEW: token to cancel old completions
+    
+    private init() {
+        setupEngine()
+    }
+    
+    private func setupEngine() {
+        audioEngine.attach(playerNode)
+        audioEngine.attach(timePitch)
+        audioEngine.connect(playerNode, to: timePitch, format: nil)
+        audioEngine.connect(timePitch, to: audioEngine.mainMixerNode, format: nil)
+        try? audioEngine.start()
+    }
+    
+    // MARK: - Load file
+    func loadLargeFile(url: URL, tracks: [VirtualTrack]) throws {
+        audioFile = try AVAudioFile(forReading: url)
+        virtualTracks = tracks
+        duration = audioFile?.duration ?? 0
+        currentTime = 0
+    }
+    
+    // MARK: - Play virtual track
+    func playVirtualTrack(at index: Int, from time: TimeInterval? = nil) {
+        guard !isScheduling else { return }
+        guard let file = audioFile, virtualTracks.indices.contains(index) else { return }
+        
+        isScheduling = true
+        defer { isScheduling = false }
+        
+        stop()
+        
+        currentVirtualTrackIndex = index
+        trackToken += 1 // increment token for this play
+        let currentToken = trackToken
+        
+        let track = virtualTracks[index]
+        let startTime = time ?? track.startTime
+        
+        let startFrame = AVAudioFramePosition(startTime * file.fileFormat.sampleRate)
+        let lengthFrames = AVAudioFrameCount((track.endTime - startTime) * file.fileFormat.sampleRate)
+        
+        playerNode.scheduleSegment(file, startingFrame: startFrame, frameCount: lengthFrames, at: nil) { [weak self] in
+            DispatchQueue.main.async {
+                guard let self = self else { return }
+                // Only auto-advance if token hasn't changed
+                guard currentToken == self.trackToken else { return }
+                
+                self.isPlaying = false
+                self.currentTime = track.endTime
+                let nextIndex = index + 1
+                if self.virtualTracks.indices.contains(nextIndex) {
+                    self.playVirtualTrack(at: nextIndex)
+                }
+            }
+        }
+        
+        timePitch.rate = playbackRate
+        playerNode.play()
+        isPlaying = true
+        
+        startTimer(trackStartTime: startTime)
+    }
+    
+    // NEW: Select track manually
+    func selectTrack(at index: Int) {
+        guard virtualTracks.indices.contains(index) else { return }
+        trackToken += 1 // cancel old completions
+        playVirtualTrack(at: index)
+    }
+    
+    // MARK: - Timer
+    private func startTimer(trackStartTime: TimeInterval) {
+        stopTimer()
+        timer = Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { [weak self] _ in
+            guard let self = self else { return }
+            guard !self.isUserScrubbing else { return }
+            
+            if let nodeTime = self.playerNode.lastRenderTime,
+               let playerTime = self.playerNode.playerTime(forNodeTime: nodeTime) {
+                self.currentTime = trackStartTime + Double(playerTime.sampleTime) / playerTime.sampleRate
+            }
+        }
+    }
+    
+    private func stopTimer() {
+        timer?.invalidate()
+        timer = nil
+    }
+    
+    // MARK: - Control
+    func stop() {
+        playerNode.stop()
+        stopTimer()
+        isPlaying = false
+    }
+    
+    func togglePlayPause() {
+        if isPlaying {
+            playerNode.pause()
+            stopTimer()
+        } else {
+            playerNode.play()
+            let trackStart = virtualTracks[safe: currentVirtualTrackIndex]?.startTime ?? 0
+            startTimer(trackStartTime: trackStart)
+        }
+        isPlaying.toggle()
+    }
+    
+    func setRate(_ rate: Float) {
+        playbackRate = rate
+        timePitch.rate = rate
+        if isPlaying {
+            playerNode.play()
+        }
+    }
+    
+    // MARK: - Sample-accurate seeking
+    func seekTo(time: TimeInterval) {
+        guard let track = virtualTracks[safe: currentVirtualTrackIndex] else { return }
+        let clampedTime = min(max(time, track.startTime), track.endTime)
+        playVirtualTrack(at: currentVirtualTrackIndex, from: clampedTime)
+    }
+    
+    func seekBy(_ delta: TimeInterval) {
+        guard let track = virtualTracks[safe: currentVirtualTrackIndex] else { return }
+        let newTime = min(max(currentTime + delta, track.startTime), track.endTime)
+        seekTo(time: newTime)
+    }
+    
+    // MARK: - Scrubbing
+    func scrub(to time: TimeInterval) {
+        guard let track = virtualTracks[safe: currentVirtualTrackIndex] else { return }
+        isUserScrubbing = true
+        currentTime = min(max(time, track.startTime), track.endTime)
+    }
+    
+    func commitScrub(to time: TimeInterval) {
+        guard let track = virtualTracks[safe: currentVirtualTrackIndex] else { return }
+        isUserScrubbing = false
+        let clampedTime = min(max(time, track.startTime), track.endTime)
+        seekTo(time: clampedTime)
+    }
+}
+
+// Array safe index extension
+extension Array {
+    subscript(safe index: Index) -> Element? {
+        indices.contains(index) ? self[index] : nil
+    }
+}
+
+// AVAudioFile duration extension
+extension AVAudioFile {
+    var duration: Double {
+        Double(length) / fileFormat.sampleRate
+    }
+}

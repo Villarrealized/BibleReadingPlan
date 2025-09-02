@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct MiniPlayerView: View {
-    @ObservedObject var audioManager = AudioPlayerManager.shared
+    @ObservedObject var audioManager = AudioPlayerEngine.shared
     @Binding var showFullPlayer: Bool
 
     var body: some View {
