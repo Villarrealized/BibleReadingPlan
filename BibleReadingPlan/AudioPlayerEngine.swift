@@ -64,6 +64,7 @@ final class AudioPlayerEngine: ObservableObject {
     @Published var currentVirtualTrackIndex: Int = 0
     @Published var playbackRate: Float = 1.0
     @Published var isUserScrubbing = false
+    @Published var totalDurationForToday: Double = 0
     
     private(set) var isLoaded = false
     
@@ -242,6 +243,7 @@ final class AudioPlayerEngine: ObservableObject {
     
     func updateTracks(for todayBuckets: [ReadingBucket]) {
         let tracks = loadTracksForToday(todayBuckets: todayBuckets)
+        self.totalDurationForToday = tracks.map { $0.endTime - $0.startTime }.reduce(0, +)
         virtualTracks = tracks
         // Reset the player to the first track of the day
         if !tracks.isEmpty {
