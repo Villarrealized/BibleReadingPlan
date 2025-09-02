@@ -41,7 +41,7 @@ struct BookItem: Codable, Hashable {
 }
 
 struct ReadingBucket: Identifiable, Equatable {
-    let id: Int
+    let id = UUID()
     let bookName: String
     let chapterName: String
     let startChapter: Int
@@ -77,7 +77,7 @@ class ReadingPlan: ObservableObject {
     
     func setToday() {
         var readingBuckets:[ReadingBucket] = []
-        for (listIndex, list) in self.bookList.enumerated() {
+        for (_, list) in self.bookList.enumerated() {
             let chaptersPerDay = list.chaptersPerDay ?? 1
             var totalDays = list.chapterCount
             
@@ -127,7 +127,6 @@ class ReadingPlan: ObservableObject {
             
             readingBuckets.append(
                 ReadingBucket(
-                    id: listIndex,
                     bookName: bookName,
                     chapterName: chapterName,
                     startChapter: startChapter,
