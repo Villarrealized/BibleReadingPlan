@@ -3,18 +3,29 @@ import SwiftUI
 struct MiniPlayerView: View {
     @ObservedObject var audioManager = AudioPlayerEngine.shared
     @Binding var showFullPlayer: Bool
-
+    
     var body: some View {
         HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 2) {
-                let current = audioManager.virtualTracks[audioManager.currentVirtualTrackIndex]
-                    Text(current.title).font(.subheadline).bold()
-                
-                ProgressView(value: min(audioManager.duration == 0 ? 0 : audioManager.currentTime / max(audioManager.duration, 0.01), 1.0))
+                // Safely get current track
+                if let current = audioManager.virtualTracks[safe: audioManager.currentVirtualTrackIndex] {
+                    Text(current.title)
+                        .font(.subheadline)
+                        .bold()
+                    
+                    // Progress relative to current track
+                    let trackProgress = max(min((audioManager.currentTime - current.startTime) / (current.endTime - current.startTime), 1.0), 0.0)
+                    ProgressView(value: trackProgress)
+                } else {
+                    Text("No Track")
+                        .font(.subheadline)
+                        .bold()
+                    ProgressView(value: 0)
+                }
             }
-
+            
             Spacer()
-
+            
             Button {
                 audioManager.togglePlayPause()
             } label: {

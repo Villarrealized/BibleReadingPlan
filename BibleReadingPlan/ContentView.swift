@@ -13,18 +13,6 @@ struct ContentView: View {
     @FocusState private var isTextFieldFocused: Bool
     @State private var showFullPlayer = false
     
-    init() {
-        if let url = Bundle.main.url(forResource: "bible", withExtension: "mp3") {
-            do {
-                try AudioPlayerEngine.shared.loadLargeFile(url: url, tracks: [])
-                // Initial load for today's buckets
-                AudioPlayerEngine.shared.updateTracks(for: readingPlan.today)
-            } catch {
-                print("Error loading audio file: \(error)")
-            }
-        }
-    }
-    
     var body: some View {
         ZStack(alignment: .bottom) {
             NavigationStack {
@@ -86,6 +74,17 @@ struct ContentView: View {
         // MARK: - Dynamic track updates
         .onChange(of: readingPlan.today) { newBuckets in
             AudioPlayerEngine.shared.updateTracks(for: newBuckets)
+        }
+        
+        .onAppear {
+            if let url = Bundle.main.url(forResource: "bible", withExtension: "mp3") {
+                do {
+                    try AudioPlayerEngine.shared.loadLargeFile(url: url, tracks: [])
+                    AudioPlayerEngine.shared.updateTracks(for: readingPlan.today)
+                } catch {
+                    print("Error loading audio file: \(error)")
+                }
+            }
         }
     }
     

@@ -21,7 +21,6 @@
 		FDDE8BE12E553B1500E0F00F /* VirtualQueueView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDDE8BE02E553B1500E0F00F /* VirtualQueueView.swift */; };
 		FDDE8BE22E553B1500E0F00F /* FullPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDDE8BDE2E553B1500E0F00F /* FullPlayerView.swift */; };
 		FDDE8BE32E553B1500E0F00F /* MiniPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDDE8BDF2E553B1500E0F00F /* MiniPlayerView.swift */; };
-		FDDE8BE52E553B4A00E0F00F /* AudioPlayerManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDDE8BE42E553B4A00E0F00F /* AudioPlayerManager.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -41,7 +40,6 @@
 		FDDE8BDE2E553B1500E0F00F /* FullPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FullPlayerView.swift; sourceTree = "<group>"; };
 		FDDE8BDF2E553B1500E0F00F /* MiniPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MiniPlayerView.swift; sourceTree = "<group>"; };
 		FDDE8BE02E553B1500E0F00F /* VirtualQueueView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VirtualQueueView.swift; sourceTree = "<group>"; };
-		FDDE8BE42E553B4A00E0F00F /* AudioPlayerManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioPlayerManager.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -82,7 +80,6 @@
 				EB57C17A2DA1B85A009A1700 /* InputSheet.swift */,
 				EB57C17E2DA1BE02009A1700 /* Book.swift */,
 				EB57C17F2DA1BE02009A1700 /* Helper.swift */,
-				FDDE8BE42E553B4A00E0F00F /* AudioPlayerManager.swift */,
 				FDDE8BDE2E553B1500E0F00F /* FullPlayerView.swift */,
 				FDDE8BDF2E553B1500E0F00F /* MiniPlayerView.swift */,
 				FDDE8BE02E553B1500E0F00F /* VirtualQueueView.swift */,
@@ -183,7 +180,6 @@
 				FDDE8BE32E553B1500E0F00F /* MiniPlayerView.swift in Sources */,
 				EB57C1662DA1AB58009A1700 /* BibleReadingPlanApp.swift in Sources */,
 				EB57C1802DA1BE02009A1700 /* Book.swift in Sources */,
-				FDDE8BE52E553B4A00E0F00F /* AudioPlayerManager.swift in Sources */,
 				EB57C17B2DA1B85A009A1700 /* InputSheet.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

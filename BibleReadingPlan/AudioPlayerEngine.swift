@@ -65,6 +65,8 @@ final class AudioPlayerEngine: ObservableObject {
     @Published var playbackRate: Float = 1.0
     @Published var isUserScrubbing = false
     
+    private(set) var isLoaded = false
+    
     var virtualTracks: [VirtualTrack] = []
     
     private var audioEngine = AVAudioEngine()
@@ -91,10 +93,12 @@ final class AudioPlayerEngine: ObservableObject {
     
     // MARK: - Load file
     func loadLargeFile(url: URL, tracks: [VirtualTrack]) throws {
+        guard !isLoaded else { return }
         audioFile = try AVAudioFile(forReading: url)
         virtualTracks = tracks
         duration = audioFile?.duration ?? 0
         currentTime = 0
+        self.isLoaded = true
     }
     
     // MARK: - Play virtual track
@@ -187,12 +191,18 @@ final class AudioPlayerEngine: ObservableObject {
         if isPlaying {
             playerNode.pause()
             stopTimer()
+            isPlaying = false
         } else {
-            playerNode.play()
-            let trackStart = virtualTracks[safe: currentVirtualTrackIndex]?.startTime ?? 0
-            startTimer(trackStartTime: trackStart)
+            // If no segment is scheduled yet, schedule current track
+            if !playerNode.isPlaying && !virtualTracks.isEmpty {
+                let currentIndex = currentVirtualTrackIndex
+                playVirtualTrack(at: currentIndex, from: currentTime)
+            } else {
+                playerNode.play()
+                startTimer(trackStartTime: virtualTracks[safe: currentVirtualTrackIndex]?.startTime ?? 0)
+                isPlaying = true
+            }
         }
-        isPlaying.toggle()
     }
     
     func setRate(_ rate: Float) {
