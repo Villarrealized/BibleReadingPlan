@@ -334,14 +334,26 @@ final class AudioPlayerEngine: ObservableObject {
     private func updateNowPlayingInfo() {
         guard let track = currentTrack else { return }
         
-        var nowPlayingInfo = [String: Any]()
+        let elapsedInTrack = currentTime - track.startTime
+        let trackDuration = track.endTime - track.startTime
+        
+        var nowPlayingInfo = MPNowPlayingInfoCenter.default().nowPlayingInfo ?? [:]
+        
+        // Title = chapter name
         nowPlayingInfo[MPMediaItemPropertyTitle] = track.title
-        nowPlayingInfo[MPMediaItemPropertyPlaybackDuration] = track.endTime - track.startTime
-        nowPlayingInfo[MPNowPlayingInfoPropertyElapsedPlaybackTime] = currentTime
+        
+        // Album/subtitle = reading plan context
+        // You can swap this for something richer if you want (e.g. "Day \(readingPlan.day)" or the book name)
+        nowPlayingInfo[MPMediaItemPropertyAlbumTitle] = "Bible Reading Plan"
+        
+        // Core playback info
+        nowPlayingInfo[MPMediaItemPropertyPlaybackDuration] = trackDuration
+        nowPlayingInfo[MPNowPlayingInfoPropertyElapsedPlaybackTime] = max(0, min(elapsedInTrack, trackDuration))
         nowPlayingInfo[MPNowPlayingInfoPropertyPlaybackRate] = isPlaying ? playbackRate : 0
         
         MPNowPlayingInfoCenter.default().nowPlayingInfo = nowPlayingInfo
     }
+
     
     private func setupRemoteCommandCenter() {
         let commandCenter = MPRemoteCommandCenter.shared()
