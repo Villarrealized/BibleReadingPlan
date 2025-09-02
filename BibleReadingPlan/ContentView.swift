@@ -97,16 +97,6 @@ struct ContentView: View {
         }
         
         .onAppear {
-            // Pre-start the audio engine to avoid first-play delay
-            let engine = AudioPlayerEngine.shared.audioEngine
-            if !engine.isRunning {
-                do {
-                    try engine.start()
-                } catch {
-                    print("Failed to start audio engine on launch: \(error)")
-                }
-            }
-            
             guard !AudioPlayerEngine.shared.isLoaded else { return }
             if let url = Bundle.main.url(forResource: "bible", withExtension: "mp3") {
                 do {

@@ -274,22 +274,6 @@ final class AudioPlayerEngine: ObservableObject {
         updateNowPlayingInfo()
     }
     
-    private func startEngineIfNeeded() {
-        if !audioEngine.isRunning {
-            do {
-                try audioEngine.start()
-            } catch {
-                print("Audio engine failed to start: \(error)")
-            }
-        }
-        
-        // Start player node if not playing, but don't schedule any buffer
-        if !playerNode.isPlaying {
-            playerNode.play()
-            playerNode.pause()
-        }
-    }
-    
     // MARK: - Now Playing Info
     private func updateNowPlayingInfo() {
         guard let track = currentTrack else { return }
