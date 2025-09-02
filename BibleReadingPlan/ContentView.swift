@@ -107,7 +107,6 @@ struct ContentView: View {
             }
         }
         .onAppear {
-            guard !AudioPlayerEngine.shared.isLoaded else { return }
             if let url = Bundle.main.url(forResource: "bible", withExtension: "mp3") {
                 do {
                     try AudioPlayerEngine.shared.loadLargeFile(url: url, tracks: [])
