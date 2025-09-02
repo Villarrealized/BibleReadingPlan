@@ -1,6 +1,7 @@
 import Foundation
 import AVFoundation
 import Combine
+import MediaPlayer
 
 
 struct VirtualTrack: Identifiable {
@@ -67,21 +68,24 @@ final class AudioPlayerEngine: ObservableObject {
     @Published var totalDurationForToday: Double = 0
     
     private(set) var isLoaded = false
-    
     var virtualTracks: [VirtualTrack] = []
     
     private var audioEngine = AVAudioEngine()
     private var playerNode = AVAudioPlayerNode()
     private var timePitch = AVAudioUnitTimePitch()
-    
     private var audioFile: AVAudioFile?
     private var timer: Timer?
     private var isScheduling = false
+    private var trackToken = 0
     
-    private var trackToken = 0 // NEW: token to cancel old completions
+    // MARK: - Current track helper
+    private var currentTrack: VirtualTrack? {
+        virtualTracks[safe: currentVirtualTrackIndex]
+    }
     
     private init() {
         setupEngine()
+        setupRemoteCommandCenter()
     }
     
     private func setupEngine() {
@@ -110,10 +114,17 @@ final class AudioPlayerEngine: ObservableObject {
         isScheduling = true
         defer { isScheduling = false }
         
+        // Stop any previous playback
         stop()
         
+        // Ensure the engine is running
+        if !audioEngine.isRunning {
+            try? audioEngine.start()
+        }
+        
+        // Update current track info
         currentVirtualTrackIndex = index
-        trackToken += 1 // increment token for this play
+        trackToken += 1
         let currentToken = trackToken
         
         let track = virtualTracks[index]
@@ -122,14 +133,16 @@ final class AudioPlayerEngine: ObservableObject {
         let startFrame = AVAudioFramePosition(startTime * file.fileFormat.sampleRate)
         let lengthFrames = AVAudioFrameCount((track.endTime - startTime) * file.fileFormat.sampleRate)
         
+        // Schedule the segment
         playerNode.scheduleSegment(file, startingFrame: startFrame, frameCount: lengthFrames, at: nil) { [weak self] in
             DispatchQueue.main.async {
                 guard let self = self else { return }
-                // Only auto-advance if token hasn't changed
                 guard currentToken == self.trackToken else { return }
                 
                 self.isPlaying = false
                 self.currentTime = track.endTime
+                
+                // Auto-advance to next track
                 let nextIndex = index + 1
                 if self.virtualTracks.indices.contains(nextIndex) {
                     self.playVirtualTrack(at: nextIndex)
@@ -137,24 +150,30 @@ final class AudioPlayerEngine: ObservableObject {
             }
         }
         
+        // Apply playback rate
         timePitch.rate = playbackRate
+        
+        // Play node
         playerNode.play()
         isPlaying = true
         
-        startTimer(trackStartTime: startTime)
+        // Start timer after a tiny delay to sync with actual audio rendering
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+            self.startTimer(trackStartTime: startTime)
+        }
     }
+
     
-    // NEW: Select track manually
     func selectTrack(at index: Int) {
         guard virtualTracks.indices.contains(index) else { return }
-        trackToken += 1 // cancel old completions
+        trackToken += 1
         playVirtualTrack(at: index)
     }
     
     // MARK: - Timer
     private func startTimer(trackStartTime: TimeInterval) {
         stopTimer()
-        guard let track = virtualTracks[safe: currentVirtualTrackIndex] else { return }
+        guard let track = currentTrack else { return }
         
         timer = Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { [weak self] _ in
             guard let self = self else { return }
@@ -163,9 +182,10 @@ final class AudioPlayerEngine: ObservableObject {
             if let nodeTime = self.playerNode.lastRenderTime,
                let playerTime = self.playerNode.playerTime(forNodeTime: nodeTime) {
                 let time = trackStartTime + Double(playerTime.sampleTime) / playerTime.sampleRate
-                self.currentTime = min(time, track.endTime) // clamp to track end
+                self.currentTime = min(time, track.endTime)
                 
-                // Stop timer if reached the end of the last track
+                self.updateNowPlayingInfo()
+                
                 if self.currentTime >= track.endTime {
                     self.stopTimer()
                     self.playerNode.stop()
@@ -174,7 +194,6 @@ final class AudioPlayerEngine: ObservableObject {
             }
         }
     }
-
     
     private func stopTimer() {
         timer?.invalidate()
@@ -186,6 +205,7 @@ final class AudioPlayerEngine: ObservableObject {
         playerNode.stop()
         stopTimer()
         isPlaying = false
+        updateNowPlayingInfo()
     }
     
     func togglePlayPause() {
@@ -194,48 +214,47 @@ final class AudioPlayerEngine: ObservableObject {
             stopTimer()
             isPlaying = false
         } else {
-            // If no segment is scheduled yet, schedule current track
             if !playerNode.isPlaying && !virtualTracks.isEmpty {
                 let currentIndex = currentVirtualTrackIndex
                 playVirtualTrack(at: currentIndex, from: currentTime)
             } else {
                 playerNode.play()
-                startTimer(trackStartTime: virtualTracks[safe: currentVirtualTrackIndex]?.startTime ?? 0)
+                startTimer(trackStartTime: currentTrack?.startTime ?? 0)
                 isPlaying = true
             }
         }
+        updateNowPlayingInfo()
     }
     
     func setRate(_ rate: Float) {
         playbackRate = rate
         timePitch.rate = rate
-        if isPlaying {
-            playerNode.play()
-        }
+        if isPlaying { playerNode.play() }
+        updateNowPlayingInfo()
     }
     
-    // MARK: - Sample-accurate seeking
     func seekTo(time: TimeInterval) {
-        guard let track = virtualTracks[safe: currentVirtualTrackIndex] else { return }
+        guard let track = currentTrack else { return }
         let clampedTime = min(max(time, track.startTime), track.endTime)
         playVirtualTrack(at: currentVirtualTrackIndex, from: clampedTime)
+        updateNowPlayingInfo()
     }
     
     func seekBy(_ delta: TimeInterval) {
-        guard let track = virtualTracks[safe: currentVirtualTrackIndex] else { return }
+        guard let track = currentTrack else { return }
         let newTime = min(max(currentTime + delta, track.startTime), track.endTime)
         seekTo(time: newTime)
     }
     
-    // MARK: - Scrubbing
     func scrub(to time: TimeInterval) {
-        guard let track = virtualTracks[safe: currentVirtualTrackIndex] else { return }
+        guard let track = currentTrack else { return }
         isUserScrubbing = true
         currentTime = min(max(time, track.startTime), track.endTime)
+        updateNowPlayingInfo()
     }
     
     func commitScrub(to time: TimeInterval) {
-        guard let track = virtualTracks[safe: currentVirtualTrackIndex] else { return }
+        guard let track = currentTrack else { return }
         isUserScrubbing = false
         let clampedTime = min(max(time, track.startTime), track.endTime)
         seekTo(time: clampedTime)
@@ -245,7 +264,6 @@ final class AudioPlayerEngine: ObservableObject {
         let tracks = loadTracksForToday(todayBuckets: todayBuckets)
         self.totalDurationForToday = tracks.map { $0.endTime - $0.startTime }.reduce(0, +)
         virtualTracks = tracks
-        // Reset the player to the first track of the day
         if !tracks.isEmpty {
             currentVirtualTrackIndex = 0
             currentTime = tracks[0].startTime
@@ -253,8 +271,60 @@ final class AudioPlayerEngine: ObservableObject {
             currentVirtualTrackIndex = 0
             currentTime = 0
         }
+        updateNowPlayingInfo()
+    }
+    
+    private func startEngineIfNeeded() {
+        if !audioEngine.isRunning {
+            do {
+                try audioEngine.start()
+            } catch {
+                print("Audio engine failed to start: \(error)")
+            }
+        }
+        
+        // Start player node if not playing, but don't schedule any buffer
+        if !playerNode.isPlaying {
+            playerNode.play()
+            playerNode.pause()
+        }
+    }
+    
+    // MARK: - Now Playing Info
+    private func updateNowPlayingInfo() {
+        guard let track = currentTrack else { return }
+        
+        var nowPlayingInfo = [String: Any]()
+        nowPlayingInfo[MPMediaItemPropertyTitle] = track.title
+        nowPlayingInfo[MPMediaItemPropertyPlaybackDuration] = track.endTime - track.startTime
+        nowPlayingInfo[MPNowPlayingInfoPropertyElapsedPlaybackTime] = currentTime
+        nowPlayingInfo[MPNowPlayingInfoPropertyPlaybackRate] = isPlaying ? playbackRate : 0
+        
+        MPNowPlayingInfoCenter.default().nowPlayingInfo = nowPlayingInfo
+    }
+    
+    private func setupRemoteCommandCenter() {
+        let commandCenter = MPRemoteCommandCenter.shared()
+        
+        commandCenter.playCommand.addTarget { [weak self] _ in
+            self?.playerNode.play()
+            self?.isPlaying = true
+            self?.updateNowPlayingInfo()
+            return .success
+        }
+        
+        commandCenter.pauseCommand.addTarget { [weak self] _ in
+            self?.playerNode.pause()
+            self?.isPlaying = false
+            self?.updateNowPlayingInfo()
+            return .success
+        }
+        
+        commandCenter.skipForwardCommand.isEnabled = false
+        commandCenter.skipBackwardCommand.isEnabled = false
     }
 }
+
 
 
 // Array safe index extension

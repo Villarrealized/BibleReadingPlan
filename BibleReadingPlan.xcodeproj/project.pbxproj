@@ -36,6 +36,7 @@
 		EB57C17F2DA1BE02009A1700 /* Helper.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Helper.swift; sourceTree = "<group>"; };
 		FD0941832E67498700F6D178 /* AudioPlayerEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioPlayerEngine.swift; sourceTree = "<group>"; };
 		FD0941852E6754C700F6D178 /* chapters.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = chapters.json; sourceTree = "<group>"; };
+		FD0941892E6787A800F6D178 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		FDDE8BDC2E5539B700E0F00F /* bible.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = bible.mp3; sourceTree = "<group>"; };
 		FDDE8BDE2E553B1500E0F00F /* FullPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FullPlayerView.swift; sourceTree = "<group>"; };
 		FDDE8BDF2E553B1500E0F00F /* MiniPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MiniPlayerView.swift; sourceTree = "<group>"; };
@@ -74,6 +75,7 @@
 		EB57C1642DA1AB58009A1700 /* BibleReadingPlan */ = {
 			isa = PBXGroup;
 			children = (
+				FD0941892E6787A800F6D178 /* Info.plist */,
 				FD0941832E67498700F6D178 /* AudioPlayerEngine.swift */,
 				EB57C1652DA1AB58009A1700 /* BibleReadingPlanApp.swift */,
 				EB57C1672DA1AB58009A1700 /* ContentView.swift */,
@@ -315,9 +317,11 @@
 				CURRENT_PROJECT_VERSION = 2;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"BibleReadingPlan/Preview Content\"";
+				DEVELOPMENT_TEAM = KTL54WY2F2;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = BibleReadingPlan/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Bible Plan";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
@@ -335,7 +339,7 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 14.5;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.nvillarreal.BibleReadingPlan;
+				PRODUCT_BUNDLE_IDENTIFIER = com.exnihilostudios.BibleReadingPlan;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
@@ -355,9 +359,11 @@
 				CURRENT_PROJECT_VERSION = 2;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"BibleReadingPlan/Preview Content\"";
+				DEVELOPMENT_TEAM = KTL54WY2F2;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = BibleReadingPlan/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Bible Plan";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
@@ -375,7 +381,7 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 14.5;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.nvillarreal.BibleReadingPlan;
+				PRODUCT_BUNDLE_IDENTIFIER = com.exnihilostudios.BibleReadingPlan;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
