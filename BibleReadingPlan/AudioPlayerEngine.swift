@@ -88,6 +88,15 @@ final class AudioPlayerEngine: ObservableObject {
         setupRemoteCommandCenter()
     }
     
+    func loadLargeFile(url: URL, tracks: [VirtualTrack]) throws {
+        guard !isLoaded else { return }
+        audioFile = try AVAudioFile(forReading: url)
+        virtualTracks = tracks
+        duration = audioFile?.duration ?? 0
+        currentTime = 0
+        self.isLoaded = true
+    }
+    
     private func setupEngine() {
         audioEngine.attach(playerNode)
         audioEngine.attach(timePitch)
@@ -215,47 +224,6 @@ final class AudioPlayerEngine: ObservableObject {
         playerNode.pause()
     }
     
-    func prepareAudio(url: URL, tracks: [VirtualTrack]) {
-        // Prevent reloading if already loaded
-        guard !isLoaded else { return }
-        
-        // Run the slow file loading on a background thread
-        DispatchQueue.global(qos: .userInitiated).async {
-            do {
-                let file = try AVAudioFile(forReading: url)
-                
-                // Once the file is loaded, switch back to the main thread to update properties
-                // and connect the audio nodes.
-                DispatchQueue.main.async {
-                    self.audioFile = file
-                    
-                    // Let the engine determine the connection format by passing nil.
-                    // This is the standard and most robust way to connect nodes.
-                    self.audioEngine.connect(self.playerNode, to: self.timePitch, format: nil)
-                    self.audioEngine.connect(self.timePitch, to: self.audioEngine.mainMixerNode, format: nil)
-                    
-                    // Start the engine if it's not running
-                    if !self.audioEngine.isRunning {
-                        try? self.audioEngine.start()
-                    }
-                    
-                    // Update state properties
-                    self.virtualTracks = tracks
-                    self.totalDurationForToday = tracks.map { $0.endTime - $0.startTime }.reduce(0, +)
-                    self.duration = file.duration
-                    self.isLoaded = true
-                    
-                    // Now that everything is loaded and connected, prime the engine.
-                    self.primeEngine()
-                }
-            } catch {
-                print("Error loading audio file: \(error)")
-            }
-        }
-    }
-
-
-    
     // MARK: - Control
     func stop() {
         playerNode.stop()
@@ -353,7 +321,6 @@ final class AudioPlayerEngine: ObservableObject {
         
         MPNowPlayingInfoCenter.default().nowPlayingInfo = nowPlayingInfo
     }
-
     
     private func setupRemoteCommandCenter() {
         let commandCenter = MPRemoteCommandCenter.shared()
