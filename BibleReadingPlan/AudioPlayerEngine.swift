@@ -157,10 +157,7 @@ final class AudioPlayerEngine: ObservableObject {
         playerNode.play()
         isPlaying = true
         
-        // Start timer after a tiny delay to sync with actual audio rendering
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-            self.startTimer(trackStartTime: startTime)
-        }
+        self.startTimer(trackStartTime: startTime)
     }
 
     
