@@ -86,7 +86,7 @@ struct FullPlayerView: View {
             VirtualQueueView { index in
                 manager.selectTrack(at: index) // fixed skipping bug
             }
-            .frame(maxHeight: 200)
+            .frame(maxHeight: 400)
             
             Spacer()
         }

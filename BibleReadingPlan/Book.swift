@@ -40,15 +40,20 @@ struct BookItem: Codable, Hashable {
     var chapters: Int
 }
 
-struct ReadingBucket: Identifiable {
-    var id: Int
-    var bookName: String
-    var chapterName: String
-    var startChapter: Int
-    var endChapter: Int
-    var day: Int
-    var totalDays: Int
+struct ReadingBucket: Identifiable, Equatable {
+    let id: Int
+    let bookName: String
+    let chapterName: String
+    let startChapter: Int
+    let endChapter: Int
+    let day: Int
+    let totalDays: Int
+    
+    static func == (lhs: ReadingBucket, rhs: ReadingBucket) -> Bool {
+        return lhs.id == rhs.id
+    }
 }
+
 
 class ReadingPlan: ObservableObject {
     init(jsonFile: String) {

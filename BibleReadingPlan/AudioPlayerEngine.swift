@@ -17,27 +17,43 @@ struct ChapterJSON: Codable {
     let name: String
 }
 
-func loadChapters() -> [VirtualTrack] {
+func loadAllChapters() -> [ChapterJSON] {
     guard let url = Bundle.main.url(forResource: "chapters", withExtension: "json") else {
-        print("Error: chapters.json not found")
+        print("chapters.json not found")
         return []
     }
-    
     do {
         let data = try Data(contentsOf: url)
-        let decoder = JSONDecoder()
-        let chaptersJSON = try decoder.decode([ChapterJSON].self, from: data)
-        
-        // Convert to VirtualTrack
-        let tracks = chaptersJSON.map { chapter in
-            VirtualTrack(title: chapter.name, startTime: chapter.start, endTime: chapter.end)
-        }
-        return tracks
+        return try JSONDecoder().decode([ChapterJSON].self, from: data)
     } catch {
         print("Error decoding chapters.json: \(error)")
         return []
     }
 }
+
+
+func loadTracksForToday(todayBuckets: [ReadingBucket]) -> [VirtualTrack] {
+    let allChapters = loadAllChapters()
+    var tracks: [VirtualTrack] = []
+    
+    for bucket in todayBuckets {
+        // For each bucket, select chapters that match bookName and chapter number range
+        let matchingChapters = allChapters.filter { chapter in
+            chapter.name.starts(with: bucket.bookName) &&
+            // Extract chapter number from name, e.g., "Genesis 3" -> 3
+            (Int(chapter.name.components(separatedBy: " ").last ?? "") ?? 0) >= bucket.startChapter &&
+            (Int(chapter.name.components(separatedBy: " ").last ?? "") ?? 0) <= bucket.endChapter
+        }
+        // Convert to VirtualTrack
+        let bucketTracks = matchingChapters.map { chapter in
+            VirtualTrack(title: chapter.name, startTime: chapter.start, endTime: chapter.end)
+        }
+        tracks.append(contentsOf: bucketTracks)
+    }
+    
+    return tracks
+}
+
 
 final class AudioPlayerEngine: ObservableObject {
     static let shared = AudioPlayerEngine()
@@ -133,16 +149,27 @@ final class AudioPlayerEngine: ObservableObject {
     // MARK: - Timer
     private func startTimer(trackStartTime: TimeInterval) {
         stopTimer()
+        guard let track = virtualTracks[safe: currentVirtualTrackIndex] else { return }
+        
         timer = Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { [weak self] _ in
             guard let self = self else { return }
             guard !self.isUserScrubbing else { return }
             
             if let nodeTime = self.playerNode.lastRenderTime,
                let playerTime = self.playerNode.playerTime(forNodeTime: nodeTime) {
-                self.currentTime = trackStartTime + Double(playerTime.sampleTime) / playerTime.sampleRate
+                let time = trackStartTime + Double(playerTime.sampleTime) / playerTime.sampleRate
+                self.currentTime = min(time, track.endTime) // clamp to track end
+                
+                // Stop timer if reached the end of the last track
+                if self.currentTime >= track.endTime {
+                    self.stopTimer()
+                    self.playerNode.stop()
+                    self.isPlaying = false
+                }
             }
         }
     }
+
     
     private func stopTimer() {
         timer?.invalidate()
@@ -202,7 +229,21 @@ final class AudioPlayerEngine: ObservableObject {
         let clampedTime = min(max(time, track.startTime), track.endTime)
         seekTo(time: clampedTime)
     }
+    
+    func updateTracks(for todayBuckets: [ReadingBucket]) {
+        let tracks = loadTracksForToday(todayBuckets: todayBuckets)
+        virtualTracks = tracks
+        // Reset the player to the first track of the day
+        if !tracks.isEmpty {
+            currentVirtualTrackIndex = 0
+            currentTime = tracks[0].startTime
+        } else {
+            currentVirtualTrackIndex = 0
+            currentTime = 0
+        }
+    }
 }
+
 
 // Array safe index extension
 extension Array {
