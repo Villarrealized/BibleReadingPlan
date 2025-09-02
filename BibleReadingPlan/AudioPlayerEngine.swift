@@ -310,9 +310,6 @@ final class AudioPlayerEngine: ObservableObject {
         // Title = chapter name
         nowPlayingInfo[MPMediaItemPropertyTitle] = track.title
         
-        // Album/subtitle = reading plan context
-        // You can swap this for something richer if you want (e.g. "Day \(readingPlan.day)" or the book name)
-        nowPlayingInfo[MPMediaItemPropertyAlbumTitle] = "Bible Reading Plan"
         
         // Core playback info
         nowPlayingInfo[MPMediaItemPropertyPlaybackDuration] = trackDuration
