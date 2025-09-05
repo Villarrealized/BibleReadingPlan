@@ -152,12 +152,17 @@
         "id": 5,
         "books": [
             {
-                "name": "Job",
-                "chapters": 42
-            },
-            {
                 "name": "Proverbs",
                 "chapters": 31
+            },
+        ]
+    },
+    {
+        "id": 6,
+        "books": [
+            {
+                "name": "Job",
+                "chapters": 42
             },
             {
                 "name": "Ecclesiastes",
@@ -170,16 +175,16 @@
         ]
     },
     {
-        "id": 6,
+        "id": 7,
         "books": [
             {
-                "name": "Psalms",
+                "name": "Psalm",
                 "chapters": 150
             }
         ]
     },
     {
-        "id": 7,
+        "id": 8,
         "books": [
             {
                 "name": "Joshua",
@@ -232,7 +237,7 @@
         ]
     },
     {
-        "id": 8,
+        "id": 9,
         "books": [
             {
                 "name": "Isaiah",

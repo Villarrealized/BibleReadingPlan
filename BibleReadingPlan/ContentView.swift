@@ -100,7 +100,7 @@ struct DayHeaderView: View {
                 .foregroundColor(.secondary)
         }
         .padding()
-        .background(Color.white)
+        .background(Color(UIColor.systemBackground))
         .clipShape(RoundedRectangle(cornerRadius: 12))
         .padding(.horizontal)
         .padding(.top, 8)
